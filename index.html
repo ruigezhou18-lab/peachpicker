@@ -105,6 +105,20 @@
         .item-right { text-align: right; display: flex; align-items: center; gap: 12px; }
         .item-cost { font-weight: 800; font-family: "Monaco", monospace; font-size: 16px; }
         .del-action { color: #ccc; font-size: 20px; padding: 5px; cursor: pointer; }
+
+        @media (max-width: 480px) {
+    /* 假设你的包裹容器叫 input-group 或 row */
+    .input-row { 
+        display: flex;
+        flex-direction: column; /* 改为垂直排列 */
+        gap: 10px; /* 增加上下间距 */
+    }
+
+    .input-row input {
+        width: 100% !important; /* 让输入框占满全宽 */
+        box-sizing: border-box; /* 确保 padding 不撑破边框 */
+    }
+}
     </style>
 </head>
 <body>
