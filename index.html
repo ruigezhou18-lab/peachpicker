@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PeachPicker</title>
+
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <link rel="apple-touch-icon" href="cat.jpg">
+    
+    <style>
+        :root {
+            --bg: #b25e6c;
+            --card: #ffffff;
+            --text: #1d1d1f;
+            --gray: #86868b;
+        }
+        body { font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; -webkit-font-smoothing: antialiased; }
+        
+        /* Dashboard看板 */
+        .dashboard { background: var(--card); padding: 22px; border-radius: 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.06); margin-bottom: 20px; }
+
+                                                    /* --- 修改 .main-stats 布局 --- */
+                                                    .main-stats { 
+                                                        display: grid; 
+                                                        /* 定义两列：第一列(文字)占剩余空间，第二列(猫)根据图片大小自动 */
+                                                        grid-template-columns: 1fr auto; 
+                                                        /* 定义行间距 */
+                                                        row-gap: 10px; 
+                                                        column-gap: 15px;
+                                                        border-bottom: 1px solid #eee; 
+                                                        padding-bottom: 18px; 
+                                                        margin-bottom: 18px; 
+                                                        align-items: center; /* 垂直居中 */
+                                                    }
+
+                                                    /* 文字组的样式，确保它们各自占一行 */
+                                                    .stat-group {
+                                                        grid-column: 1; /* 始终在第一列 */
+                                                    }
+
+                                                    /* --- 猫咪容器：关键在于跨行 --- */
+                                                    .cat-container {
+                                                        grid-column: 2;   /* 在第二列 */
+                                                        grid-row: span 2; /* 纵向跨越两行 */
+                                                        justify-self: end; /* 靠右对齐 */
+                                                    }
+
+                                                    .cat-avatar {
+                                                        /* 既然跨了两行，你可以把猫咪图片稍微放大一点，比如 80px-90px */
+                                                        width: 200px; 
+                                                        height: 200px; 
+                                                        border-radius: 10%; 
+                                                        object-fit: cover; 
+                                                        border: 3px solid #fff; 
+                                                        box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+                                                        display: block;
+                                                    }
+
+        .stat-label { font-size: 12px; color: var(--gray); display: block; margin-bottom: 5px; }
+        .stat-val { font-size: 26px; font-weight: 800; }
+        .balance-val { color: #f89797; font-size: 34px; grid-column: span 2; }
+        
+        /* 动态分类支出网格 */
+        .tag-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .tag-stat-card { padding: 10px 14px; border-radius: 14px; background: #fafafa; border-left: 4px solid #ddd; transition: 0.3s; }
+        .tag-stat-name { font-size: 20px; color: var(--gray); display: block; margin-bottom: 2px; }
+        .tag-stat-amount { font-size: 18px; font-weight: 700; display: block; }
+
+        /* 输入区 */
+        .box { background: var(--card); padding: 18px; border-radius: 22px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        input, select { border: 1px solid #eee; padding: 12px; border-radius: 12px; flex: 1; outline: none; font-size: 14px; background: #fafafa; }
+        .btn { border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .btn-add { background: var(--text); color: white; width: 100%; font-size: 16px; }
+
+        /* 工具箱 */
+        .tag-manage { font-size: 12px; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .tag-del-btn { background: #fee; color: #e74c3c; padding: 3px 7px; border-radius: 6px; border: 1px solid #fcc; }
+
+        /* 过滤栏 */
+        .filter-bar { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 8px; scrollbar-width: none; }
+        .filter-bar::-webkit-scrollbar { display: none; }
+        .pill { white-space: nowrap; padding: 7px 18px; border-radius: 20px; background: #ddd; font-size: 13px; cursor: pointer; }
+        .pill.active { background: var(--text); color: white; }
+
+        /* 列表卡片 */
+        .item-card { 
+            background: var(--card); 
+            padding: 18px; 
+            border-radius: 18px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            border-left: 6px solid #ddd;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .item-left { display: flex; flex-direction: column; flex: 1; padding-right: 15px; }
+        .item-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+        .item-memo { font-size: 12px; color: var(--gray); margin-bottom: 8px; line-height: 1.4; }
+        .item-tag-label { font-size: 10px; padding: 3px 8px; border-radius: 5px; color: white; width: fit-content; font-weight: bold; }
+        .item-right { text-align: right; display: flex; align-items: center; gap: 12px; }
+        .item-cost { font-weight: 800; font-family: "Monaco", monospace; font-size: 16px; }
+        .del-action { color: #ccc; font-size: 20px; padding: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+
+                        <div class="main-stats">
+                            <div class="stat-group">
+                                <span class="stat-label">装修预算余额</span>
+                                <div id="balance" class="stat-val balance-val">¥0</div>
+                            </div>
+
+                            <div class="stat-group">
+                                <span class="stat-label">累计总支出</span>
+                                <div id="totalSpent" class="stat-val" style="font-size: 25px; color: var(--gray);">¥0</div>
+                            </div>
+                            
+                            <div class="cat-container">
+                                <img src="cat.jpg" alt="我的猫" class="cat-avatar">
+                            </div>
+                        </div>
+
+        <div id="tagStatsGrid" class="tag-stats-grid"></div>
+    </div>
+
+    <div class="box">
+        <div class="input-row">
+            <input type="text" id="itemName" placeholder="项目名称">
+            <input type="number" id="itemCost" placeholder="金额">
+        </div>
+        <div class="input-row">
+            <input type="text" id="itemMemo" placeholder="添加备注 (可选)">
+        </div>
+        <div class="input-row">
+            <select id="itemTagSelect"></select>
+            <button class="btn btn-add" onclick="addItem()" style="flex: 0.4;">记账</button>
+        </div>
+        
+        <details style="margin-top: 15px; font-size: 13px; color: var(--gray);">
+            <summary style="cursor: pointer;">管理工具箱 (预算 & 标签)</summary>
+            
+            <div class="input-row" style="margin-top:15px; border-bottom: 1px dashed #eee; padding-bottom: 15px;">
+                <span style="flex: 1; align-self: center;">修改预算：</span>
+                <input type="number" id="updateBudgetInput">
+                <button class="btn" onclick="updateBudget()" style="background: #007aff; color:white; font-size: 12px;">更新</button>
+            </div>
+
+            <div class="input-row" style="margin-top:15px;">
+                <input type="text" id="newTagName" placeholder="新分类名">
+                <input type="color" id="newTagColor" value="#636e72" style="flex: 0.2; padding: 2px;">
+                <button class="btn" onclick="addTag()" style="font-size: 12px;">加标签</button>
+            </div>
+            <div id="tagManageList" class="tag-manage"></div>
+        </details>
+    </div>
+
+    <div class="filter-bar" id="filterBar"></div>
+    <div id="itemList"></div>
+
+    <script>
+        let budget = parseFloat(localStorage.getItem('reno_final_budget')) || 200000;
+        let expenses = JSON.parse(localStorage.getItem('reno_final_items')) || [];
+        let tags = JSON.parse(localStorage.getItem('reno_final_tags')) || [
+            {name: '主材', color: '#1063ff'},
+            {name: '家电', color: '#00c853'},
+            {name: '人工', color: '#ff9100'}
+        ];
+        let currentFilter = '全部';
+
+        function updateUI() {
+            const select = document.getElementById('itemTagSelect');
+            const filterBar = document.getElementById('filterBar');
+            const tagManageList = document.getElementById('tagManageList');
+            const statsGrid = document.getElementById('tagStatsGrid');
+            const listEl = document.getElementById('itemList');
+            
+            select.innerHTML = '';
+            filterBar.innerHTML = `<div class="pill ${currentFilter === '全部' ? 'active' : ''}" onclick="setFilter('全部')">全部</div>`;
+            tagManageList.innerHTML = '';
+            document.getElementById('updateBudgetInput').value = budget;
+
+            let total = 0;
+            let tagTotals = {};
+            tags.forEach(t => {
+                tagTotals[t.name] = 0;
+                select.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+                filterBar.innerHTML += `<div class="pill ${currentFilter === t.name ? 'active' : ''}" onclick="setFilter('${t.name}')">${t.name}</div>`;
+                tagManageList.innerHTML += `<span>${t.name} <button class="tag-del-btn" onclick="deleteTag('${t.name}')">×</button></span>`;
+            });
+
+            expenses.forEach(item => {
+                const cost = parseFloat(item.cost);
+                total += cost;
+                if (tagTotals[item.tag] !== undefined) tagTotals[item.tag] += cost;
+            });
+
+            statsGrid.innerHTML = '';
+            tags.forEach(t => {
+                statsGrid.innerHTML += `
+                    <div class="tag-stat-card" style="border-left-color: ${t.color}">
+                        <span class="tag-stat-name">${t.name}</span>
+                        <span class="tag-stat-amount" style="color: ${t.color}">¥${tagTotals[t.name].toLocaleString()}</span>
+                    </div>`;
+            });
+
+            document.getElementById('balance').innerText = `¥${(budget - total).toLocaleString()}`;
+            document.getElementById('totalSpent').innerText = `¥${total.toLocaleString()}`;
+
+            listEl.innerHTML = '';
+            expenses.filter(i => currentFilter === '全部' || i.tag === currentFilter).forEach(item => {
+                const tagObj = tags.find(t => t.name === item.tag) || {color: '#86868b'};
+                listEl.innerHTML += `
+                    <div class="item-card" style="border-left-color: ${tagObj.color};">
+                        <div class="item-left">
+                            <span class="item-name">${item.name}</span>
+                            ${item.memo ? `<span class="item-memo">${item.memo}</span>` : ''}
+                            <span class="item-tag-label" style="background: ${tagObj.color}">${item.tag}</span>
+                        </div>
+                        <div class="item-right">
+                            <span class="item-cost" style="color: ${tagObj.color}">¥${parseFloat(item.cost).toLocaleString()}</span>
+                            <span class="del-action" onclick="deleteItem(${item.id})">×</span>
+                        </div>
+                    </div>`;
+            });
+
+            localStorage.setItem('reno_final_items', JSON.stringify(expenses));
+            localStorage.setItem('reno_final_tags', JSON.stringify(tags));
+            localStorage.setItem('reno_final_budget', budget);
+        }
+
+        function addItem() {
+            const name = document.getElementById('itemName').value;
+            const cost = document.getElementById('itemCost').value;
+            const memo = document.getElementById('itemMemo').value;
+            const tag = document.getElementById('itemTagSelect').value;
+            if (name && cost) {
+                expenses.unshift({ id: Date.now(), name, cost, tag, memo: memo.trim() });
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemCost').value = '';
+                document.getElementById('itemMemo').value = '';
+                updateUI();
+            }
+        }
+
+        function deleteItem(id) {
+            if(confirm('确定删除这笔支出吗？')) {
+                expenses = expenses.filter(i => i.id !== id);
+                updateUI();
+            }
+        }
+
+        function updateBudget() {
+            const nb = document.getElementById('updateBudgetInput').value;
+            if(nb) { budget = parseFloat(nb); updateUI(); alert('预算更新成功！'); }
+        }
+
+        function addTag() {
+            const n = document.getElementById('newTagName').value;
+            const c = document.getElementById('newTagColor').value;
+            if(n && !tags.find(t => t.name === n)) { tags.push({name: n, color: c}); updateUI(); }
+        }
+
+        function deleteTag(n) {
+            if(confirm(`删除分类 ${n} 吗？`)) { tags = tags.filter(t => t.name !== n); updateUI(); }
+        }
+
+        function setFilter(f) { currentFilter = f; updateUI(); }
+
+        updateUI();
+    </script>
+</body>
+</html>
